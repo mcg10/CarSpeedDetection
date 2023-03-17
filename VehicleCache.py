@@ -41,10 +41,16 @@ class VehicleCache:
         return self.vehicles
 
     def determine_nearest_neighbors(self, centroids):
-        distances = dist.cdist(np.array(self.vehicles.values()), centroids)
+        prev_centroids = list(self.vehicles.values())
+        distances = dist.cdist(np.array(prev_centroids), centroids)
         ids = list(self.vehicles.keys())
         rows = distances.min(axis=1).argsort()
         cols = distances.argmin(axis=1)[rows]
+        used_rows, used_cols = self.determine_used_dimensions(ids, centroids,
+                                                              rows, cols)
+        self.update_unused_dimensions(distances, used_rows, used_cols, ids, centroids)
+
+    def determine_used_dimensions(self, ids, centroids, rows, cols):
         used_rows, used_cols = set(), set()
         for (row, col) in zip(rows, cols):
             if row in used_rows or col in used_cols:
@@ -54,13 +60,16 @@ class VehicleCache:
             self.undetected[vehicle_id] = 0
             used_rows.add(row)
             used_cols.add(col)
+        return used_rows, used_cols
+
+    def update_unused_dimensions(self, distances, used_rows, used_cols, ids, centroids):
         unused_rows = set(range(0, distances.shape[0])).difference(used_rows)
         unused_cols = set(range(0, distances.shape[1])).difference(used_cols)
         if distances.shape[0] >= distances.shape[1]:
             for row in unused_rows:
                 vehicle_id = ids[row]
                 self.undetected[vehicle_id] += 1
-                if self.undetected[vehicle_id] > 50:
+                if self.undetected[vehicle_id] > 20:
                     self.remove(vehicle_id)
         else:
             for col in unused_cols:
