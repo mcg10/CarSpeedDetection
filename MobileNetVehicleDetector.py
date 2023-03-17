@@ -74,8 +74,6 @@ class MobileNetVehicleDetector:
             tracker.update(rgb_frame)
             p = tracker.get_position()
             x, y, fx, fy = int(p.left()), int(p.top()), int(p.right()), int(p.bottom())
-            if x < 0 or y < 0 or x > frame.shape[1] or y > frame.shape[0]:
-                print("Shit!")
             cv2.rectangle(frame, (x, y), (fx, fy), (255, 0, 0), 4)
 
     def resize_frame(self, frame: np.ndarray):
