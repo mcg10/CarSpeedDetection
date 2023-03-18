@@ -3,11 +3,12 @@ import cv2
 import numpy as np
 import dlib
 from VehicleCache import VehicleCache
-url = "https://www.youtube.com/watch?v=9lzOzmFXrRA" #NC
+
+#url = "https://www.youtube.com/watch?v=9lzOzmFXrRA"  # NC
 #url = "https://www.youtube.com/watch?v=fuuBpBQElv4" #NH
 
 
-#url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
+url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
 
 prototext, model = 'MobileNetSSD_deploy.prototxt', 'MobileNetSSD_deploy.caffemodel'
 
@@ -25,12 +26,21 @@ def add_point(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDOWN:
         points.append((x, y))
 
-def draw_anchors(frame, points):
+
+def draw_anchors(frame):
     for (i, point) in enumerate(points):
         cv2.putText(frame, str(i), (point[0] - 10, point[1] - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
         cv2.circle(frame, (point[0], point[1]), 4, (255, 0, 0), -1)
 
+
+def draw_distances(frame):
+    global points, distances
+    for (i, distance) in enumerate(distances):
+        a, b = points[i], points[i + 1]
+        text = '{} ft'.format(distance)
+        cv2.putText(frame, text, ((a[0] + b[0])//2 - 10, (a[1] + b[1])//2),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 2)
 
 
 class MobileNetVehicleDetector:
@@ -38,6 +48,7 @@ class MobileNetVehicleDetector:
     def __init__(self, video: str):
         self.classifier = cv2.dnn.readNetFromCaffe(prototext, model)
         self.trackers = []
+        self.granularity = 0
         self.cache = VehicleCache()
         if video.startswith('https'):
             video = pafy.new(video)
@@ -46,15 +57,46 @@ class MobileNetVehicleDetector:
         else:
             self.capture = cv2.VideoCapture(video)
         self.initialize_anchors()
+        self.initialize_distances()
 
     def initialize_anchors(self):
+        while self.granularity == 0:
+            print("How many points of approximation would you like?")
+            granularity = input()
+            try:
+                self.granularity = int(granularity)
+            except:
+                print("Invalid number")
         _, frame = self.capture.read()
         frame = self.resize_frame(frame)
         cv2.namedWindow('image')
         cv2.setMouseCallback('image', add_point)
         global points
-        while len(points) < 4:
-            draw_anchors(frame, points)
+        while len(points) < self.granularity:
+            draw_anchors(frame)
+            cv2.imshow('image', frame)
+            cv2.waitKey(20)
+        draw_anchors(frame)
+        cv2.imshow('image', frame)
+        cv2.waitKey(20)
+
+    def initialize_distances(self):
+        _, frame = self.capture.read()
+        frame = self.resize_frame(frame)
+        cv2.namedWindow('image')
+        i = 0
+        global points, distances
+        while i < len(points) - 1:
+            print('Distance between point {} and {} (ft):'.format(i, i + 1))
+            distance = input()
+            try:
+                distance = float(distance)
+                distances.append(distance)
+                i += 1
+            except:
+                print('Invalid distance given')
+            draw_anchors(frame)
+            draw_distances(frame)
             cv2.imshow('image', frame)
             cv2.waitKey(20)
 
@@ -91,9 +133,9 @@ class MobileNetVehicleDetector:
     def detect_objects(self, frame: np.ndarray):
         blob = cv2.dnn.blobFromImage(frame, size=(300, 300),
                                      ddepth=cv2.CV_8U)
-        classifier.setInput(blob, scalefactor=1.0 / 127.5, mean=[127.5,
+        self.classifier.setInput(blob, scalefactor=1.0 / 127.5, mean=[127.5,
                                                                  127.5, 127.5])
-        detections = classifier.forward()
+        detections = self.classifier.forward()
         return detections
 
     def track_cars(self, detections: np.ndarray, frame: np.ndarray, height: int,
