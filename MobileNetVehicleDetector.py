@@ -2,21 +2,35 @@ import pafy
 import cv2
 import numpy as np
 import dlib
-
-# url = "https://www.youtube.com/watch?v=9lzOzmFXrRA" #NC
-# url = "https://www.youtube.com/watch?v=fuuBpBQElv4" #NH
 from VehicleCache import VehicleCache
+url = "https://www.youtube.com/watch?v=9lzOzmFXrRA" #NC
+#url = "https://www.youtube.com/watch?v=fuuBpBQElv4" #NH
 
-url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
+
+#url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
 
 prototext, model = 'MobileNetSSD_deploy.prototxt', 'MobileNetSSD_deploy.caffemodel'
-
-classifier = cv2.dnn.readNetFromCaffe(prototext, model)
 
 CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
            "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
            "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
            "sofa", "train", "tvmonitor"]
+
+points = []
+distances = []
+
+
+def add_point(event, x, y, flags, param):
+    global points
+    if event == cv2.EVENT_LBUTTONDOWN:
+        points.append((x, y))
+
+def draw_anchors(frame, points):
+    for (i, point) in enumerate(points):
+        cv2.putText(frame, str(i), (point[0] - 10, point[1] - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+        cv2.circle(frame, (point[0], point[1]), 4, (255, 0, 0), -1)
+
 
 
 class MobileNetVehicleDetector:
@@ -31,11 +45,24 @@ class MobileNetVehicleDetector:
             self.capture = cv2.VideoCapture(best.url)
         else:
             self.capture = cv2.VideoCapture(video)
+        self.initialize_anchors()
+
+    def initialize_anchors(self):
+        _, frame = self.capture.read()
+        frame = self.resize_frame(frame)
+        cv2.namedWindow('image')
+        cv2.setMouseCallback('image', add_point)
+        global points
+        while len(points) < 4:
+            draw_anchors(frame, points)
+            cv2.imshow('image', frame)
+            cv2.waitKey(20)
 
     def run(self):
         frame_count = 0
+        global points
         while True:
-            grabbed, frame = self.capture.read()
+            _, frame = self.capture.read()
             frame = self.resize_frame(frame)
             if frame_count % 4 == 0:
                 self.trackers.clear()
@@ -51,6 +78,11 @@ class MobileNetVehicleDetector:
                 cv2.putText(frame, text, (int(centroid[0]) - 10, int(centroid[1]) - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 cv2.circle(frame, (int(centroid[0]), int(centroid[1])), 4, (0, 255, 0), -1)
+
+            for (i, point) in enumerate(points):
+                cv2.putText(frame, str(i), (point[0] - 10, point[1] - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+                cv2.circle(frame, (point[0], point[1]), 4, (255, 0, 0), -1)
 
             cv2.imshow('frame', frame)
             cv2.waitKey(1)
