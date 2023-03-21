@@ -2,9 +2,12 @@ from collections import OrderedDict
 from scipy.spatial import distance as dist
 import numpy as np
 
+'''
+Algorithmic process derived from Adrian Rosebrock, PhD
+'''
 
 def calc_centroids(boxes):
-    centroids = np.zeros((len(boxes), 2))
+    centroids = np.zeros((len(boxes), 2), dtype='int')
     for (i, (x, y, fx, fy)) in enumerate(boxes):
         a, b = (x + fx)//2, (y + fy)//2
         centroids[i] = [a, b]
@@ -23,7 +26,7 @@ class VehicleCache:
         self.undetected[self.nextId] = 0
         self.nextId += 1
 
-    def remove(self, vehicle_id):
+    def remove(self, vehicle_id: int):
         del self.vehicles[vehicle_id]
         del self.undetected[vehicle_id]
 
