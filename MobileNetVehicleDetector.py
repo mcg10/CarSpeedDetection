@@ -1,9 +1,9 @@
 import pafy
 import cv2
 import numpy as np
-import dlib
 
 #from Vehicle import Vehicle
+from Detector import Detector
 from VehicleCache import VehicleCache
 
 #url = "https://www.youtube.com/watch?v=9lzOzmFXrRA"  # NC
@@ -13,14 +13,6 @@ from VehicleCache import VehicleCache
 
 url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
 
-prototext, model = 'MobileNetSSD_deploy.prototxt', 'MobileNetSSD_deploy.caffemodel'
-
-CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
-           "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
-           "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
-           "sofa", "train", "tvmonitor"]
-
-MIN_CONFIDENCE = .3
 DETECT_FRAME = 3
 
 
@@ -36,7 +28,7 @@ def resize_frame(frame):
 class MobileNetVehicleDetector:
 
     def __init__(self, video: str):
-        self.classifier = cv2.dnn.readNetFromCaffe(prototext, model)
+        self.classifier = Detector()
         self.vehicles = {}
         self.trackers, self.anchors, self.distances = [], [], []
         self.granularity = 0
@@ -112,10 +104,7 @@ class MobileNetVehicleDetector:
             _, frame = self.capture.read()
             frame = resize_frame(frame)
             if frame_count % DETECT_FRAME == 0:
-                self.trackers.clear()
-                detections = self.detect_objects(frame)
-                height, width = frame.shape[:2]
-                self.track_cars(detections, frame, height, width)
+                self.trackers = self.classifier.detect_vehicles(frame)
             else:
                 vehicles = self.update_trackers(frame)
                 #self.evaluate_vehicles(vehicles)
@@ -136,27 +125,6 @@ class MobileNetVehicleDetector:
             cv2.waitKey(1)
             frame_count += 1
 
-    def detect_objects(self, frame):
-        blob = cv2.dnn.blobFromImage(frame, size=(300, 300),
-                                     ddepth=cv2.CV_8U)
-        self.classifier.setInput(blob, scalefactor=1.0 / 127.5, mean=[127.5,
-                                                                      127.5, 127.5])
-        detections = self.classifier.forward()
-        return detections
-
-    def track_cars(self, detections, frame, height, width):
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        for i in np.arange(0, detections.shape[2]):
-            confidence = detections[0, 0, i, 2]
-            idx = int(detections[0, 0, i, 1])
-            if (CLASSES[idx] == 'car' or CLASSES[idx] == 'bus') and confidence >= MIN_CONFIDENCE:
-                box = detections[0, 0, i, 3:7] * np.array([width, height, width, height])
-                x, y, fx, fy = box.astype("int")
-                tracker = dlib.correlation_tracker()
-                rectangle = dlib.rectangle(x, y, fx, fy)
-                tracker.start_track(rgb_frame, rectangle)
-                self.trackers.append(tracker)
-
     def update_trackers(self, frame: np.ndarray):
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         boxes = []
@@ -171,7 +139,6 @@ class MobileNetVehicleDetector:
     #     for (vehicle_id, position) in vehicles:
     #         if vehicle_id not in self.vehicles:
     #             vehicle = Vehicle(position, len(self.an))
-
 
 
 if __name__ == '__main__':
