@@ -31,6 +31,7 @@ class VehicleCache:
         del self.undetected[vehicle_id]
 
     def update(self, boxes):
+        undetected = []
         if not boxes:
             for vehicle in self.undetected.keys():
                 self.undetected[vehicle] += 1
@@ -40,8 +41,8 @@ class VehicleCache:
             for centroid in centroids:
                 self.add(centroid)
         else:
-            self.determine_nearest_neighbors(centroids)
-        return self.vehicles
+            undetected = self.determine_nearest_neighbors(centroids)
+        return self.vehicles, undetected
 
     def determine_nearest_neighbors(self, centroids):
         prev_centroids = list(self.vehicles.values())
@@ -51,7 +52,7 @@ class VehicleCache:
         cols = distances.argmin(axis=1)[rows]
         used_rows, used_cols = self.determine_used_dimensions(ids, centroids,
                                                               rows, cols)
-        self.update_unused_dimensions(distances, used_rows, used_cols, ids, centroids)
+        return self.update_unused_dimensions(distances, used_rows, used_cols, ids, centroids)
 
     def determine_used_dimensions(self, ids, centroids, rows, cols):
         used_rows, used_cols = set(), set()
@@ -66,6 +67,7 @@ class VehicleCache:
         return used_rows, used_cols
 
     def update_unused_dimensions(self, distances, used_rows, used_cols, ids, centroids):
+        undetected = []
         unused_rows = set(range(0, distances.shape[0])).difference(used_rows)
         unused_cols = set(range(0, distances.shape[1])).difference(used_cols)
         if distances.shape[0] >= distances.shape[1]:
@@ -73,10 +75,12 @@ class VehicleCache:
                 vehicle_id = ids[row]
                 self.undetected[vehicle_id] += 1
                 if self.undetected[vehicle_id] > 20:
+                    undetected.append(vehicle_id)
                     self.remove(vehicle_id)
         else:
             for col in unused_cols:
                 self.add(centroids[col])
+        return undetected
 
 
 

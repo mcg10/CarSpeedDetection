@@ -4,20 +4,21 @@ import numpy as np
 
 #from Vehicle import Vehicle
 from Detector import Detector
+from Vehicle import Vehicle
 from VehicleCache import VehicleCache
 
-#url = "https://www.youtube.com/watch?v=9lzOzmFXrRA"  # NC
+url = "https://www.youtube.com/watch?v=9lzOzmFXrRA"  # NC
 #url = "https://www.youtube.com/watch?v=fuuBpBQElv4" #NH
 #url = "https://www.youtube.com/watch?v=vWaFYoZ5qyM" #Apex
 
 
-url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
+#url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
 
 DETECT_FRAME = 3
 
 
 def resize_frame(frame):
-    scale_percent = 75
+    scale_percent = 50
     width = int(frame.shape[1] * scale_percent / 100)
     height = int(frame.shape[0] * scale_percent / 100)
     dim = (width, height)
@@ -106,8 +107,10 @@ class MobileNetVehicleDetector:
             if frame_count % DETECT_FRAME == 0:
                 self.trackers = self.classifier.detect_vehicles(frame)
             else:
-                vehicles = self.update_trackers(frame)
-                #self.evaluate_vehicles(vehicles)
+                vehicles, undetected = self.update_trackers(frame)
+                self.remove_undetected(undetected)
+                self.update_positions(vehicles)
+                self.evaluate_vehicles(vehicles)
 
             for vehicle in self.cache.vehicles:
                 centroid = self.cache.vehicles[vehicle]
@@ -135,10 +138,27 @@ class MobileNetVehicleDetector:
             boxes.append((x, y, fx, fy))
         return self.cache.update(boxes)
 
-    # def evaluate_vehicles(self, vehicles):
-    #     for (vehicle_id, position) in vehicles:
-    #         if vehicle_id not in self.vehicles:
-    #             vehicle = Vehicle(position, len(self.an))
+    def remove_undetected(self, undetected):
+        for vehicle_id in undetected:
+            del self.vehicles[vehicle_id]
+
+    def update_positions(self, vehicles):
+        for (vehicle_id, vehicle) in self.vehicles.items():
+            if vehicle.direction == 0 and vehicle_id in vehicles:
+                vehicle.positions.append(vehicles[vehicle_id])
+
+    def evaluate_vehicles(self, vehicles):
+        for (vehicle_id, position) in vehicles.items():
+            vehicle = self.vehicles.get(vehicle_id, None)
+            if not vehicle:
+                self.vehicles[vehicle_id] = Vehicle(position, len(self.distances))
+            elif not vehicle.evaluated:
+                if vehicle.direction == 0:
+                    vehicle.estimate_direction()
+                    print("id: {}, direction: {}".format(vehicle_id, vehicle.direction))
+                # vehicle.update_position(position, self.anchors)
+                # if vehicle.passed_all_points:
+                #     print(vehicle.estimate_speed(self.distances))
 
 
 if __name__ == '__main__':
