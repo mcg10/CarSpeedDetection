@@ -30,8 +30,30 @@ class Vehicle:
                     if point == p[-1]:
                         self.passed_all_points = True
 
-    def estimate_speed(self, distances):
-        return 0
+    def estimate_speed(self, ratios):
+        speeds = []
+        #print(self.anchors)
+        for (i, ratio) in enumerate(ratios):
+            if not self.anchors[i] or not self.anchors[i + 1]:
+                continue
+            (a_time, a_pos), (b_time, b_pos) = self.anchors[i], self.anchors[i + 1]
+            if np.array_equal(a_pos, b_pos):
+                continue
+            pixels = np.sqrt((a_pos[0] - b_pos[0])**2 + (a_pos[1] - b_pos[1])**2)
+            distance = pixels * ratio
+            time = abs(a_time - b_time)
+            speeds.append(distance/time)
+        if not speeds:
+            self.anchors.clear()
+            self.direction = 0
+            self.positions.clear()
+            self.passed_all_points = False
+            return -1
+        self.evaluated = True
+        speed = np.mean(speeds) * 3600/5280
+        if speed > 0:
+            print(self.anchors)
+        return speed
 
 
 

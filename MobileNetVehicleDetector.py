@@ -105,7 +105,7 @@ class MobileNetVehicleDetector:
         ratios = []
         for (i, distance) in enumerate(distances):
             diff = np.sqrt((self.anchors[i][0] - self.anchors[i + 1][0])**2
-                           + (self.anchors[i][0] - self.anchors[i + 1][0])**2)
+                           + (self.anchors[i][1] - self.anchors[i + 1][1])**2)
             ratios.append(distance/diff)
         return ratios
 
@@ -168,7 +168,7 @@ class MobileNetVehicleDetector:
                     vehicle.estimate_direction()
                 vehicle.update_position(position, self.anchors)
                 if vehicle.passed_all_points:
-                    vehicle.evaluated = True
+                    print('id: {}, speed {}'.format(vehicle_id, vehicle.estimate_speed(self.ratios)))
 
 
 if __name__ == '__main__':
