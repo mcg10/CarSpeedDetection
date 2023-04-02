@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import dlib
+import socket
 
 prototext, model = 'MobileNetSSD_deploy.prototxt', 'MobileNetSSD_deploy.caffemodel'
 
@@ -16,6 +17,8 @@ class Detector:
 
     def __init__(self):
         self.detector = cv2.dnn.readNetFromCaffe(prototext, model)
+        if not socket.gethostname().startswith('Matthew'):
+            self.detector.setPreferableTarget(cv2.dnn.DNN_TARGET_MYRIAD)
 
     def detect_vehicles(self, frame):
         detections = self.detect_objects(frame)

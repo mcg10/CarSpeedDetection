@@ -20,6 +20,7 @@ class VehicleCache:
         self.vehicles = OrderedDict()
         self.undetected = OrderedDict()
         self.nextId = 0
+        self.clear_from_main = []
 
     def add(self, vehicle):
         self.vehicles[self.nextId] = vehicle
@@ -30,8 +31,12 @@ class VehicleCache:
         del self.vehicles[vehicle_id]
         del self.undetected[vehicle_id]
 
+    def get_undetected(self):
+        undetected = self.clear_from_main.copy()
+        self.clear_from_main.clear()
+        return undetected
+
     def update(self, boxes):
-        undetected = []
         if not boxes:
             for vehicle in self.undetected.keys():
                 self.undetected[vehicle] += 1
@@ -41,8 +46,8 @@ class VehicleCache:
             for centroid in centroids:
                 self.add(centroid)
         else:
-            undetected = self.determine_nearest_neighbors(centroids)
-        return self.vehicles, undetected
+            self.determine_nearest_neighbors(centroids)
+        return self.vehicles
 
     def determine_nearest_neighbors(self, centroids):
         prev_centroids = list(self.vehicles.values())
@@ -67,7 +72,6 @@ class VehicleCache:
         return used_rows, used_cols
 
     def update_unused_dimensions(self, distances, used_rows, used_cols, ids, centroids):
-        undetected = []
         unused_rows = set(range(0, distances.shape[0])).difference(used_rows)
         unused_cols = set(range(0, distances.shape[1])).difference(used_cols)
         if distances.shape[0] >= distances.shape[1]:
@@ -75,12 +79,11 @@ class VehicleCache:
                 vehicle_id = ids[row]
                 self.undetected[vehicle_id] += 1
                 if self.undetected[vehicle_id] > 20:
-                    undetected.append(vehicle_id)
+                    self.clear_from_main.append(vehicle_id)
                     self.remove(vehicle_id)
         else:
             for col in unused_cols:
                 self.add(centroids[col])
-        return undetected
 
 
 

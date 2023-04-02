@@ -2,23 +2,22 @@ import pafy
 import cv2
 import numpy as np
 
-#from Vehicle import Vehicle
 from Detector import Detector
 from Vehicle import Vehicle
 from VehicleCache import VehicleCache
 
-url = "https://www.youtube.com/watch?v=9lzOzmFXrRA"  # NC
+#url = "https://www.youtube.com/watch?v=9lzOzmFXrRA"  # NC
 #url = "https://www.youtube.com/watch?v=fuuBpBQElv4" #NH
 #url = "https://www.youtube.com/watch?v=vWaFYoZ5qyM" #Apex
 
 
-#url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
+url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
 
 DETECT_FRAME = 3
 
 
 def resize_frame(frame):
-    scale_percent = 50
+    scale_percent = 60
     width = int(frame.shape[1] * scale_percent / 100)
     height = int(frame.shape[0] * scale_percent / 100)
     dim = (width, height)
@@ -41,7 +40,8 @@ class MobileNetVehicleDetector:
         else:
             self.capture = cv2.VideoCapture(video)
         self.initialize_anchors()
-        self.initialize_distances()
+        distances = self.initialize_distances()
+        self.ratios = self.calculate_ratios(distances)
 
     def initialize_anchors(self):
         while self.granularity == 0:
@@ -77,27 +77,37 @@ class MobileNetVehicleDetector:
         _, frame = self.capture.read()
         frame = resize_frame(frame)
         cv2.namedWindow('image')
+        distances = []
         i = 0
         while i < self.granularity - 1:
             print('Distance between point {} and {} (ft):'.format(i, i + 1))
             distance = input()
             try:
                 distance = float(distance)
-                self.distances.append(distance)
+                distances.append(distance)
                 i += 1
             except:
                 print('Invalid distance given')
             self.draw_anchors(frame)
-            self.draw_distances(frame)
+            self.draw_distances(distances, frame)
             cv2.imshow('image', frame)
             cv2.waitKey(20)
+        return distances
 
-    def draw_distances(self, frame):
-        for (i, distance) in enumerate(self.distances):
+    def draw_distances(self, distances, frame):
+        for (i, distance) in enumerate(distances):
             a, b = self.anchors[i], self.anchors[i + 1]
             text = '{} ft'.format(distance)
             cv2.putText(frame, text, ((a[0] + b[0]) // 2 - 10, (a[1] + b[1]) // 2),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 2)
+
+    def calculate_ratios(self, distances):
+        ratios = []
+        for (i, distance) in enumerate(distances):
+            diff = np.sqrt((self.anchors[i][0] - self.anchors[i + 1][0])**2
+                           + (self.anchors[i][0] - self.anchors[i + 1][0])**2)
+            ratios.append(distance/diff)
+        return ratios
 
     def run(self):
         frame_count = 0
@@ -107,7 +117,8 @@ class MobileNetVehicleDetector:
             if frame_count % DETECT_FRAME == 0:
                 self.trackers = self.classifier.detect_vehicles(frame)
             else:
-                vehicles, undetected = self.update_trackers(frame)
+                vehicles = self.update_trackers(frame)
+                undetected = self.cache.get_undetected()
                 self.remove_undetected(undetected)
                 self.update_positions(vehicles)
                 self.evaluate_vehicles(vehicles)
@@ -155,10 +166,9 @@ class MobileNetVehicleDetector:
             elif not vehicle.evaluated:
                 if vehicle.direction == 0:
                     vehicle.estimate_direction()
-                    print("id: {}, direction: {}".format(vehicle_id, vehicle.direction))
-                # vehicle.update_position(position, self.anchors)
-                # if vehicle.passed_all_points:
-                #     print(vehicle.estimate_speed(self.distances))
+                vehicle.update_position(position, self.anchors)
+                if vehicle.passed_all_points:
+                    vehicle.evaluated = True
 
 
 if __name__ == '__main__':

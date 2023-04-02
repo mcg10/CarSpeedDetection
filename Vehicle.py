@@ -20,7 +20,7 @@ class Vehicle:
     def update_position(self, position, points):
         p = points.copy()
         backwards = False
-        if self.direction == -1:
+        if self.direction < 0:
             p = p[::-1]
             backwards = True
         for (i, point) in enumerate(p):
