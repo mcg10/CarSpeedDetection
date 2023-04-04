@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from scipy.spatial import distance as dist
 import numpy as np
 
 '''
@@ -51,7 +50,8 @@ class VehicleCache:
 
     def determine_nearest_neighbors(self, centroids):
         prev_centroids = list(self.vehicles.values())
-        distances = dist.cdist(np.array(prev_centroids), centroids)
+        x = np.array(prev_centroids)
+        distances = np.linalg.norm(x[:, None, :] - centroids[None, :, :], axis=2)
         ids = list(self.vehicles.keys())
         rows = distances.min(axis=1).argsort()
         cols = distances.argmin(axis=1)[rows]
