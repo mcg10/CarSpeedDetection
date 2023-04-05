@@ -17,7 +17,7 @@ if __name__ == '__main__':
     url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
     video = pafy.new(url)
     best = video.getbest(preftype="mp4")
-    capture = cv2.VideoCapture(best.url)
+    capture = cv2.VideoCapture("test_video.mp4")
     while True:
         _, frame = capture.read()
         frame = resize_frame(frame)
