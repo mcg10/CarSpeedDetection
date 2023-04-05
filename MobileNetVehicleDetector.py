@@ -1,6 +1,7 @@
 import pafy
 import cv2
 import numpy as np
+from datetime import datetime
 
 from Detector import Detector
 from Vehicle import Vehicle
@@ -113,6 +114,7 @@ class MobileNetVehicleDetector:
         frame_count = 0
         while True:
             _, frame = self.capture.read()
+            start = datetime.now().timestamp()
             frame = resize_frame(frame)
             if frame_count % DETECT_FRAME == 0:
                 self.trackers = self.classifier.detect_vehicles(frame)
@@ -137,6 +139,7 @@ class MobileNetVehicleDetector:
 
             cv2.imshow('frame', frame)
             cv2.waitKey(1)
+            print(1 / (datetime.now().timestamp() - start))
             frame_count += 1
 
     def update_trackers(self, frame: np.ndarray):
@@ -168,8 +171,9 @@ class MobileNetVehicleDetector:
                     vehicle.estimate_direction()
                 vehicle.update_position(position, self.anchors)
                 if vehicle.passed_all_points:
-                    print('id: {}, speed {}'.format(vehicle_id,
-                                                    vehicle.estimate_speed(self.distances, self.ratios)))
+                    speed = vehicle.estimate_speed(self.distances, self.ratios)
+                    if speed != -1:
+                        print('id: {}, speed {}'.format(vehicle_id, speed))
 
 
 if __name__ == '__main__':
