@@ -1,5 +1,6 @@
 import pafy
 import cv2
+from acapture import acapture
 
 url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
 
@@ -17,10 +18,11 @@ if __name__ == '__main__':
     url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
     video = pafy.new(url)
     best = video.getbest(preftype="mp4")
-    capture = cv2.VideoCapture("test_video.mp4")
-    capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
+    capture = acapture.open("test_video.mp4")
     while True:
-        _, frame = capture.read()
-        frame = resize_frame(frame)
-        cv2.imshow('frame', frame)
-        cv2.waitKey(1)
+        check, frame = capture.read()
+        if check:
+            frame = resize_frame(frame)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            cv2.imshow('frame', frame)
+            cv2.waitKey(1)
