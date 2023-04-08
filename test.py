@@ -1,6 +1,7 @@
 import pafy
 import cv2
-from acapture import acapture
+from ffpyplayer.player import MediaPlayer
+import numpy as np
 
 url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
 
@@ -18,11 +19,13 @@ if __name__ == '__main__':
     url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
     video = pafy.new(url)
     best = video.getbest(preftype="mp4")
-    capture = acapture.open("test_video.mp4")
+    player = MediaPlayer("test_video.mp4")
     while True:
-        check, frame = capture.read()
-        if check:
-            frame = resize_frame(frame)
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            cv2.imshow('frame', frame)
+        frame, _ = player.get_frame()
+        if frame:
+            img, t = frame
+            w = img.get_size()[0]
+            h = img.get_size()[1]
+            arr = np.uint8(np.asarray(list(img.to_bytearray()[0])).reshape(h, w, 3))
+            cv2.imshow('frame', arr)
             cv2.waitKey(1)
