@@ -18,7 +18,7 @@ DETECT_FRAME = 3
 
 
 def resize_frame(frame):
-    scale_percent = 60
+    scale_percent = 40
     width = int(frame.shape[1] * scale_percent / 100)
     height = int(frame.shape[0] * scale_percent / 100)
     dim = (width, height)

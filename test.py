@@ -18,6 +18,7 @@ if __name__ == '__main__':
     video = pafy.new(url)
     best = video.getbest(preftype="mp4")
     capture = cv2.VideoCapture("test_video.mp4")
+    capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
     while True:
         _, frame = capture.read()
         frame = resize_frame(frame)
