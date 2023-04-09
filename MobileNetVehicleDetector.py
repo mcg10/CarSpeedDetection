@@ -145,6 +145,7 @@ class MobileNetVehicleDetector:
             self.writer.write(frame)
         frame = resize_frame(frame)
         if self.frame_count % DETECT_FRAME == 0:
+            self.cache.trackers.clear()
             self.trackers = self.classifier.detect_vehicles(frame)
             self.centroid_track = True
         else:
