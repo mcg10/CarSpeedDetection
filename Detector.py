@@ -15,9 +15,9 @@ MIN_CONFIDENCE = .3
 
 class Detector:
 
-    def __init__(self):
+    def __init__(self, env):
         self.detector = cv2.dnn.readNetFromCaffe(prototext, model)
-        if not socket.gethostname().startswith('Matthew'):
+        if not env:
             self.detector.setPreferableTarget(cv2.dnn.DNN_TARGET_MYRIAD)
 
     def detect_vehicles(self, frame):
