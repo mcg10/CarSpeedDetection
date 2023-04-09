@@ -49,6 +49,7 @@ class MobileNetVehicleDetector:
         self.fps, self.writer = None, None
         self.frame_count = 0
         self.centroid_track = False
+        self.pi_frame_count = 0
 
     def initialize_anchors(self):
         while self.granularity == 0:
@@ -130,8 +131,11 @@ class MobileNetVehicleDetector:
                     break
         else:
             for frame in iio.imiter("tilton_detection.avi", plugin="pyav"):
+                if self.pi_frame_count % 3 != 0:
+                    continue
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 self.process(frame)
+                self.pi_frame_count += 1
         self.fps.stop()
         print('FPS: {}'.format(self.fps.fps()))
 

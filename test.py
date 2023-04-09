@@ -17,10 +17,14 @@ def resize_frame(frame):
 if __name__ == '__main__':
     fps = FPS().start()
     count = 0
-    for frame in iio.imiter("driving.avi", plugin="pyav"):
+    for frame in iio.imiter("tilton_detection.avi", plugin="pyav"):
+        if count % 3 != 0:
+            count += 1
+            continue
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         cv2.imshow('frame', frame)
         cv2.waitKey(1)
         fps.update()
+        count += 1
     fps.stop()
     print(fps.fps())
