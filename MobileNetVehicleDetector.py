@@ -120,13 +120,13 @@ class MobileNetVehicleDetector:
         if self.env:
             while True:
                 _, frame = self.capture.read()
-                self.process(frame)
+                if not self.process(frame):
+                    break
         else:
             for frame in iio.imiter("test_video.mp4", plugin="pyav"):
                 self.process(frame)
-        self.fps().stop()
+        self.fps.stop()
         print('FPS: {}'.format(self.fps.fps()))
-
 
     def process(self, frame):
         start = datetime.now().timestamp()
@@ -154,9 +154,10 @@ class MobileNetVehicleDetector:
 
         cv2.imshow('frame', frame)
         if cv2.waitKey(1) == ESCAPE:
-            return
+            return False
         self.fps.update()
         self.frame_count += 1
+        return True
 
     def update_trackers(self, frame: np.ndarray):
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
