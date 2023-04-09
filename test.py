@@ -17,7 +17,7 @@ def resize_frame(frame):
 if __name__ == '__main__':
     fps = FPS().start()
     count = 0
-    for frame in iio.imiter("test_video.mp4", plugin="pyav"):
+    for frame in iio.imiter("driving.avi", plugin="pyav"):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         cv2.imshow('frame', frame)
         cv2.waitKey(1)

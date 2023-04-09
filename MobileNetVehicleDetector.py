@@ -17,7 +17,7 @@ from VehicleCache import VehicleCache
 
 url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
 
-DETECT_FRAME = 3
+DETECT_FRAME = 6
 ESCAPE = 27
 
 
@@ -46,7 +46,7 @@ class MobileNetVehicleDetector:
         self.initialize_anchors()
         self.distances = self.initialize_distances()
         self.ratios = self.calculate_ratios()
-        self.fps = None
+        self.fps, self.writer = None, None
         self.frame_count = 0
 
     def initialize_anchors(self):
@@ -118,6 +118,11 @@ class MobileNetVehicleDetector:
     def run(self):
         self.fps = FPS().start()
         if self.env:
+            frame_width = int(self.capture.get(3))
+            frame_height = int(self.capture.get(4))
+
+            size = (frame_width, frame_height)
+            self.writer = cv2.VideoWriter('driving.avi', cv2.VideoWriter_fourcc(*'XVID'), 30, size)
             while True:
                 _, frame = self.capture.read()
                 if not self.process(frame):
@@ -129,7 +134,8 @@ class MobileNetVehicleDetector:
         print('FPS: {}'.format(self.fps.fps()))
 
     def process(self, frame):
-        start = datetime.now().timestamp()
+        if self.env:
+            self.writer.write(frame)
         frame = resize_frame(frame)
         if self.frame_count % DETECT_FRAME == 0:
             self.trackers = self.classifier.detect_vehicles(frame)
