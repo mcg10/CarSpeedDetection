@@ -123,13 +123,14 @@ class MobileNetVehicleDetector:
             frame_height = int(self.capture.get(4))
 
             size = (frame_width, frame_height)
-            self.writer = cv2.VideoWriter('driving.avi', cv2.VideoWriter_fourcc(*'XVID'), 30, size)
+            self.writer = cv2.VideoWriter('tilton_detection.avi', cv2.VideoWriter_fourcc(*'XVID'), 30, size)
             while True:
                 _, frame = self.capture.read()
                 if not self.process(frame):
                     break
         else:
-            for frame in iio.imiter("test_video.mp4", plugin="pyav"):
+            for frame in iio.imiter("tilton_detection.avi", plugin="pyav"):
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 self.process(frame)
         self.fps.stop()
         print('FPS: {}'.format(self.fps.fps()))
