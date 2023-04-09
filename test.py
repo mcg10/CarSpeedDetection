@@ -1,7 +1,5 @@
-import pafy
 import cv2
-from ffpyplayer.player import MediaPlayer
-import numpy as np
+from imutils.video import FPS
 import imageio.v3 as iio
 
 url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
@@ -17,6 +15,12 @@ def resize_frame(frame):
 
 
 if __name__ == '__main__':
+    fps = FPS().start()
+    count = 0
     for frame in iio.imiter("test_video.mp4", plugin="pyav"):
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         cv2.imshow('frame', frame)
         cv2.waitKey(1)
+        fps.update()
+    fps.stop()
+    print(fps.fps())

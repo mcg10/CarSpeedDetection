@@ -2,6 +2,7 @@ import pafy
 import cv2
 import numpy as np
 from datetime import datetime
+from imutils.video import FPS
 import socket
 import imageio.v3 as iio
 
@@ -17,6 +18,7 @@ from VehicleCache import VehicleCache
 url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
 
 DETECT_FRAME = 3
+ESCAPE = 27
 
 
 def resize_frame(frame):
@@ -44,7 +46,7 @@ class MobileNetVehicleDetector:
         self.initialize_anchors()
         self.distances = self.initialize_distances()
         self.ratios = self.calculate_ratios()
-        self.fps = []
+        self.fps = None
         self.frame_count = 0
 
     def initialize_anchors(self):
@@ -114,6 +116,7 @@ class MobileNetVehicleDetector:
         return ratios
 
     def run(self):
+        self.fps = FPS().start()
         if self.env:
             while True:
                 _, frame = self.capture.read()
@@ -121,6 +124,9 @@ class MobileNetVehicleDetector:
         else:
             for frame in iio.imiter("test_video.mp4", plugin="pyav"):
                 self.process(frame)
+        self.fps().stop()
+        print('FPS: {}'.format(self.fps.fps()))
+
 
     def process(self, frame):
         start = datetime.now().timestamp()
@@ -147,12 +153,9 @@ class MobileNetVehicleDetector:
             cv2.circle(frame, (point[0], point[1]), 4, (255, 0, 0), -1)
 
         cv2.imshow('frame', frame)
-        cv2.waitKey(1)
-
-        self.fps.append(1 / (datetime.now().timestamp() - start))
-        if len(self.fps) == 1000:
-            print("FPS: {}".format(np.mean(self.fps)))
-            self.fps.clear()
+        if cv2.waitKey(1) == ESCAPE:
+            return
+        self.fps.update()
         self.frame_count += 1
 
     def update_trackers(self, frame: np.ndarray):
