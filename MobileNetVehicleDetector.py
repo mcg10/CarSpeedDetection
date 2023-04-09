@@ -48,6 +48,7 @@ class MobileNetVehicleDetector:
         self.ratios = self.calculate_ratios()
         self.fps, self.writer = None, None
         self.frame_count = 0
+        self.centroid_track = False
 
     def initialize_anchors(self):
         while self.granularity == 0:
@@ -139,8 +140,10 @@ class MobileNetVehicleDetector:
         frame = resize_frame(frame)
         if self.frame_count % DETECT_FRAME == 0:
             self.trackers = self.classifier.detect_vehicles(frame)
+            self.centroid_track = True
         else:
             vehicles = self.update_trackers(frame)
+            self.centroid_track = False
             undetected = self.cache.get_undetected()
             self.remove_undetected(undetected)
             self.update_positions(vehicles)
@@ -172,8 +175,8 @@ class MobileNetVehicleDetector:
             tracker.update(rgb_frame)
             p = tracker.get_position()
             x, y, fx, fy = int(p.left()), int(p.top()), int(p.right()), int(p.bottom())
-            boxes.append((x, y, fx, fy))
-        return self.cache.update(boxes)
+            boxes.append(((x, y, fx, fy), tracker))
+        return self.cache.update(boxes, self.centroid_track)
 
     def remove_undetected(self, undetected):
         for vehicle_id in undetected:
