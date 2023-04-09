@@ -131,7 +131,7 @@ class MobileNetVehicleDetector:
                     break
         else:
             for frame in iio.imiter("tilton_detection.avi", plugin="pyav"):
-                if self.pi_frame_count % 3 != 0:
+                if self.pi_frame_count % 3 == 2:
                     self.pi_frame_count += 1
                     continue
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
