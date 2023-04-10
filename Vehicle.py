@@ -58,8 +58,6 @@ class Vehicle:
             return -1
         self.evaluated = True
         speed = np.mean(speeds) * 3600/5280
-        if speed > 0:
-            print(self.anchors)
         return speed
 
 
