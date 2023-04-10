@@ -10,13 +10,12 @@ from Client import Client
 from Detector import Detector
 from Vehicle import Vehicle
 from VehicleCache import VehicleCache
-
-# url = "https://www.youtube.com/watch?v=9lzOzmFXrRA"  # NC
-# url = "https://www.youtube.com/watch?v=fuuBpBQElv4" #NH
+url = "https://www.youtube.com/watch?v=9lzOzmFXrRA"  # NC
+# url = "https://www.youtube.com/watch?v=9s2jhwQ_yMg" #NH
 # url = "https://www.youtube.com/watch?v=vWaFYoZ5qyM" #Apex
 
 
-url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
+#url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
 
 DETECT_FRAME = 6
 ESCAPE = 27
@@ -34,9 +33,9 @@ def resize_frame(frame):
 class MobileNetVehicleDetector:
 
     def __init__(self, video: str):
-        self.client = Client()
-        proc = Process(target=self.client.send, args=('Testing multiprocessing',))
-        proc.start()
+        # self.client = Client()
+        # proc = Process(target=self.client.send, args=('Testing multiprocessing',))
+        # proc.start()
         self.env = socket.gethostname().startswith('Matthew')
         self.classifier = Detector(self.env)
         self.vehicles = {}
@@ -128,7 +127,7 @@ class MobileNetVehicleDetector:
             frame_height = int(self.capture.get(4))
 
             size = (frame_width, frame_height)
-            self.writer = cv2.VideoWriter('tilton_detection_night.avi', cv2.VideoWriter_fourcc(*'XVID'), 30, size)
+            self.writer = cv2.VideoWriter('nc_detection_night.avi', cv2.VideoWriter_fourcc(*'XVID'), 30, size)
             while True:
                 _, frame = self.capture.read()
                 if not self.process(frame):
