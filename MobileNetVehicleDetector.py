@@ -1,11 +1,12 @@
 import pafy
 import cv2
 import numpy as np
-from datetime import datetime
 from imutils.video import FPS
 import socket
 import imageio.v3 as iio
+from multiprocessing import Process
 
+from Client import Client
 from Detector import Detector
 from Vehicle import Vehicle
 from VehicleCache import VehicleCache
@@ -33,6 +34,9 @@ def resize_frame(frame):
 class MobileNetVehicleDetector:
 
     def __init__(self, video: str):
+        self.client = Client()
+        proc = Process(target=self.client.send, args=('Testing multiprocessing',))
+        proc.start()
         self.env = socket.gethostname().startswith('Matthew')
         self.classifier = Detector(self.env)
         self.vehicles = {}

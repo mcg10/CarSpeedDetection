@@ -1,20 +1,22 @@
 import socket
 
 
-def Client():
-    host = '192.168.1.111'  # client ip
-    port = 4005
+class Client:
+    def __init__(self):
+        host = '192.168.1.111'  # client ip
+        port = 4005
 
-    server = ('192.168.1.117', 4000)
+        self.server = ('192.168.1.117', 4000)
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.bind((host, port))
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.s.bind((host, port))
 
-    message = input("-> ")
-    while message != 'q':
-        s.sendto(message.encode('utf-8'), server)
-        message = input("-> ")
-    s.close()
+    def send(self, vehicle_id):
+        message = 'Vehicle {} was speeding'.format(vehicle_id)
+        self.s.sendto(message.encode('utf-8'), self.server)
+
+    def shut_down(self):
+        self.s.close()
 
 
 if __name__ == '__main__':
