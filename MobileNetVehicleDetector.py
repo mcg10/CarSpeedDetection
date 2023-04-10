@@ -5,13 +5,14 @@ from imutils.video import FPS
 import socket
 import imageio.v3 as iio
 from multiprocessing import Process
+from datetime import datetime
 
 from Client import Client
 from Detector import Detector
 from Vehicle import Vehicle
 from VehicleCache import VehicleCache
-url = "https://www.youtube.com/watch?v=9lzOzmFXrRA"  # NC
-# url = "https://www.youtube.com/watch?v=9s2jhwQ_yMg" #NH
+#url = "https://www.youtube.com/watch?v=9lzOzmFXrRA"  # NC
+url = "https://www.youtube.com/watch?v=9s2jhwQ_yMg" #NH
 # url = "https://www.youtube.com/watch?v=vWaFYoZ5qyM" #Apex
 
 
@@ -22,7 +23,7 @@ ESCAPE = 27
 
 
 def resize_frame(frame):
-    scale_percent = 40
+    scale_percent = 60
     width = int(frame.shape[1] * scale_percent / 100)
     height = int(frame.shape[0] * scale_percent / 100)
     dim = (width, height)
@@ -53,6 +54,7 @@ class MobileNetVehicleDetector:
         self.frame_count = 0
         self.centroid_track = False
         self.pi_frame_count = 0
+        self.metrics = {'detection': [], 'correlation': [], 'centroid': []}
 
     def initialize_anchors(self):
         while self.granularity == 0:
@@ -127,7 +129,7 @@ class MobileNetVehicleDetector:
             frame_height = int(self.capture.get(4))
 
             size = (frame_width, frame_height)
-            self.writer = cv2.VideoWriter('nc_detection_night.avi', cv2.VideoWriter_fourcc(*'XVID'), 30, size)
+            self.writer = cv2.VideoWriter('nh_detection_day.avi', cv2.VideoWriter_fourcc(*'XVID'), 30, size)
             while True:
                 _, frame = self.capture.read()
                 if not self.process(frame):
@@ -143,6 +145,9 @@ class MobileNetVehicleDetector:
                 self.pi_frame_count += 1
         self.fps.stop()
         print('FPS: {}'.format(self.fps.fps()))
+        print('Detection: {}'.format(np.mean(self.metrics['detection'])))
+        print('Centroid: {}'.format(np.mean(self.metrics['centroid'])))
+        print('Correlation: {}'.format(np.mean(self.metrics['correlation'])))
 
     def process(self, frame):
         if self.env:
@@ -150,10 +155,17 @@ class MobileNetVehicleDetector:
         frame = resize_frame(frame)
         if self.frame_count % DETECT_FRAME == 0:
             self.cache.trackers.clear()
+            start = datetime.now().timestamp()
             self.trackers = self.classifier.detect_vehicles(frame)
+            self.metrics['detection'].append(datetime.now().timestamp() - start)
             self.centroid_track = True
         else:
+            start = datetime.now().timestamp()
             vehicles = self.update_trackers(frame)
+            # if self.centroid_track:
+            #     self.metrics['centroid'].append(datetime.now().timestamp() - start)
+            # else:
+            #     self.metrics['correlation'].append(datetime.now().timestamp() - start)
             self.centroid_track = False
             undetected = self.cache.get_undetected()
             self.remove_undetected(undetected)
