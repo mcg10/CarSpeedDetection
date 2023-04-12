@@ -12,11 +12,11 @@ from Detector import Detector
 from Vehicle import Vehicle
 from VehicleCache import VehicleCache
 #url = "https://www.youtube.com/watch?v=9lzOzmFXrRA"  # NC
-url = "https://www.youtube.com/watch?v=9s2jhwQ_yMg" #NH
+#url = "https://www.youtube.com/watch?v=9s2jhwQ_yMg" #NH
 # url = "https://www.youtube.com/watch?v=vWaFYoZ5qyM" #Apex
 
 
-#url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
+url = "https://www.youtube.com/watch?v=5_XSYlAfJZM"  # Tilton
 
 DETECT_FRAME = 6
 ESCAPE = 27
@@ -54,7 +54,7 @@ class MobileNetVehicleDetector:
         self.frame_count = 0
         self.centroid_track = False
         self.pi_frame_count = 0
-        self.metrics = {'detection': [], 'correlation': [], 'centroid': []}
+        #self.metrics = {'detection': [], 'correlation': [], 'centroid': []}
 
     def initialize_anchors(self):
         while self.granularity == 0:
@@ -129,20 +129,20 @@ class MobileNetVehicleDetector:
             frame_height = int(self.capture.get(4))
 
             size = (frame_width, frame_height)
-            self.writer = cv2.VideoWriter('nh_detection_day.avi', cv2.VideoWriter_fourcc(*'XVID'), 30, size)
+            self.writer = cv2.VideoWriter('tilton_speed_test.avi', cv2.VideoWriter_fourcc(*'XVID'), 30, size)
             while True:
                 _, frame = self.capture.read()
                 if not self.process(frame):
                     break
         else:
-            for frame in iio.imiter("tilton_detection_night.avi", plugin="pyav"):
-                if self.pi_frame_count % 3 == 2:
-                    self.pi_frame_count += 1
-                    self.fps.update()
-                    continue
+            for frame in iio.imiter("nh_detection_night.avi", plugin="pyav"):
+                # if self.pi_frame_count % 3 == 2:
+                #     self.pi_frame_count += 1
+                #     self.fps.update()
+                #     continue
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 self.process(frame)
-                self.pi_frame_count += 1
+                # self.pi_frame_count += 1
         self.fps.stop()
         print('FPS: {}'.format(self.fps.fps()))
         print('Detection: {}'.format(np.mean(self.metrics['detection'])))
@@ -155,16 +155,16 @@ class MobileNetVehicleDetector:
         frame = resize_frame(frame)
         if self.frame_count % DETECT_FRAME == 0:
             self.cache.trackers.clear()
-            start = datetime.now().timestamp()
+            #start = datetime.now().timestamp()
             self.trackers = self.classifier.detect_vehicles(frame)
-            self.metrics['detection'].append(datetime.now().timestamp() - start)
+            #self.metrics['detection'].append(datetime.now().timestamp() - start)
             self.centroid_track = True
         else:
             start = datetime.now().timestamp()
             vehicles = self.update_trackers(frame)
             # if self.centroid_track:
             #     self.metrics['centroid'].append(datetime.now().timestamp() - start)
-            # else:
+            # if not self.centroid_track:
             #     self.metrics['correlation'].append(datetime.now().timestamp() - start)
             self.centroid_track = False
             undetected = self.cache.get_undetected()
