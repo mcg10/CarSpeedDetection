@@ -39,6 +39,7 @@ class MobileNetVehicleDetector:
         # proc.start()
         self.env = socket.gethostname().startswith('Matthew')
         self.classifier = Detector(self.env)
+        self.env = False
         self.vehicles = {}
         self.trackers, self.anchors, self.distances = [], [], []
         self.granularity = 0
@@ -135,7 +136,7 @@ class MobileNetVehicleDetector:
                 if not self.process(frame):
                     break
         else:
-            for frame in iio.imiter("nh_detection_night.avi", plugin="pyav"):
+            for frame in iio.imiter("tilton_speed_test.avi", plugin="pyav"):
                 # if self.pi_frame_count % 3 == 2:
                 #     self.pi_frame_count += 1
                 #     self.fps.update()
@@ -223,6 +224,7 @@ class MobileNetVehicleDetector:
                     speed = vehicle.estimate_speed(self.distances, self.ratios)
                     if speed != -1:
                         print('id: {}, speed {}'.format(vehicle_id, speed))
+                        del self.vehicles[vehicle_id]
 
 
 if __name__ == '__main__':
