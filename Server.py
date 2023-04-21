@@ -2,7 +2,7 @@ import socket
 
 
 def Server():
-    host = '192.168.1.117'  # Server ip
+    host = 'SERVER IP'  # Server ip
     port = 4000
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
